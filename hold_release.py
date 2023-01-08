@@ -8,11 +8,11 @@ import uuid
 import httpx
 import tomli
 
-with open("myConfig.toml", "rb") as file:
+with open("config.toml", "rb") as file:
     config = tomli.load(file)
 
 # Setup account details
-# The keys should be stored in the myConfig.toml file,
+# The keys should be stored in the config.toml file,
 # stored in the same location as this script.
 ACCESS_KEY: str = config.get("access_key")
 SECRET_KEY: str = config.get("secret_key")
