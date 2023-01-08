@@ -12,8 +12,8 @@ with open("myConfig.toml", "rb") as file:
     config = tomli.load(file)
 
 # Setup account details
-# The keys should be stored in the myConfig.toml file, stored in the same location
-# as this script.
+# The keys should be stored in the myConfig.toml file,
+# stored in the same location as this script.
 ACCESS_KEY: str = config.get("access_key")
 SECRET_KEY: str = config.get("secret_key")
 APP_ID: str = config.get("app_id")
@@ -102,10 +102,12 @@ payload = json.dumps({
 })
 
 get_held_messages = send_request(FIND_HELD_MESSAGES, payload)
-message_ids_to_release = [message_id["id"] for message_id in get_held_messages["data"]]
+messages_to_release = [
+    message_id["id"] for message_id in get_held_messages["data"]
+]
 
 # Release messages
-for message_id in message_ids_to_release:
+for message_id in messages_to_release:
     payload = json.dumps({
         "data": [
             {
