@@ -65,7 +65,6 @@ def send_request(uri: str, body: any) -> httpx.Response:
     Returns:
         JSON response from the provided endpoint as a dict
     """
-
     response = httpx.post(
         url=BASE_URL + uri,
         headers={
