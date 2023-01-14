@@ -109,7 +109,7 @@ message_ids_to_find: list[str] = [
 message_ids_set: set[str] = set(message_ids_to_find)
 
 # Get IDs of failed messages
-messages_to_release = []
+messages_to_release: list[str] = []
 for msg_id in message_ids_set:
     payload = json.dumps({
         "data": [
@@ -123,11 +123,11 @@ for msg_id in message_ids_set:
     messages_to_release.append(find_message_ids['data'][0]['trackedEmails'][0]['id'])
 
 # Release Messages
-for message_id in messages_to_release:
+for msg_id in messages_to_release:
     payload = json.dumps({
         "data": [
             {
-                "id": message_id
+                "id": msg_id
             }
         ]
     })
