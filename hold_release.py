@@ -23,12 +23,13 @@ APP_KEY: str = config.get("app_key")
 request_id: str = str(uuid.uuid4())
 hdr_date: str = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S %Z")
 end_time: str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S%z")
-time_delta: datetime = datetime.now(timezone.utc) + timedelta(hours=1)
+time_delta: datetime = datetime.now(timezone.utc) - timedelta(hours=1)
 start_time: str = time_delta.strftime("%Y-%m-%dT%H:%M:%S%z")
 
 # Endpoint information
 BASE_URL: str = config.get("base_url")
-FIND_HELD_MESSAGES: str = "/api/gateway/get-hold-message-list"
+GET_ATTACHMENT_LOGS: str = "/api/ttp/attachment/get-logs"
+FIND_MESSAGE_ID: str = "/api/message-finder/search"
 RELEASE_MESSAGE: str = "/api/gateway/hold-release"
 
 
@@ -80,7 +81,7 @@ def send_request(uri: str, body: any) -> httpx.Response:
     return response.json()
 
 
-# Get a list of held messages
+# Get a list of failed messages
 payload = json.dumps({
     "meta": {
         "pagination": {
@@ -89,23 +90,39 @@ payload = json.dumps({
     },
     "data": [
         {
-            "admin": True,
-            "start": start_time,
-            "searchBy": {
-                "fieldName": "reasonCode",
-                "value": "default_inbound_attachment_protect_definition"
-            },
-            "end": end_time
+            "oldestFirst": False,
+            "from": start_time,
+            "route": "all",
+            "to": end_time,
+            "scanResult": "error"
         }
     ]
 })
 
-get_held_messages = send_request(FIND_HELD_MESSAGES, payload)
-messages_to_release = [
-    message_id["id"] for message_id in get_held_messages["data"]
+get_held_messages = send_request(GET_ATTACHMENT_LOGS, payload)
+message_ids_to_find: list[str] = [
+    msg_id['messageId'] for msg_id in
+    get_held_messages['data'][0]['attachmentLogs']
 ]
 
-# Release messages
+# Deduplicate message_ids_to_find
+message_ids_set: set[str] = set(message_ids_to_find)
+
+# Get IDs of failed messages
+messages_to_release = []
+for msg_id in message_ids_set:
+    payload = json.dumps({
+        "data": [
+            {
+                "messageId": msg_id
+            }
+        ]
+    })
+
+    find_message_ids = send_request(FIND_MESSAGE_ID, payload)
+    messages_to_release.append(find_message_ids['data'][0]['trackedEmails'][0]['id'])
+
+# Release Messages
 for message_id in messages_to_release:
     payload = json.dumps({
         "data": [
